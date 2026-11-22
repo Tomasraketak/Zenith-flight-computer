@@ -23,6 +23,12 @@ SKETCHES = {
 }
 
 
+# copies of headers whose original lives in ANOTHER repository (checked when it is next to this one)
+FOREIGN = [
+    ("../Daidalos_Landing_Rocket_Code/Ariadna_V2/common/ariadna_rampa_link.h", "../RampaCode/Rampa_MCU/ariadna_rampa_link.h"),
+]
+
+
 def main() -> int:
     fix = "--fix" in sys.argv
     bad = 0
@@ -42,6 +48,18 @@ def main() -> int:
             else:
                 print(f"STALE  {sk}/{f}")
                 bad += 1
+    for src, dst in FOREIGN:
+        src, dst = os.path.normpath(os.path.join(ROOT, src)), os.path.normpath(os.path.join(ROOT, dst))
+        if not (os.path.exists(src) and os.path.isdir(os.path.dirname(dst))):
+            continue
+        if os.path.exists(dst) and filecmp.cmp(src, dst, shallow=False):
+            print(f"ok     {os.path.relpath(dst, ROOT)} (= Daidalos)")
+        elif fix:
+            shutil.copyfile(src, dst)
+            print(f"FIXED  {os.path.relpath(dst, ROOT)}")
+        else:
+            print(f"STALE  {os.path.relpath(dst, ROOT)} (differs from Daidalos)")
+            bad += 1
     if bad:
         print(f"\n{bad} stale copies - run: python3 tools/sync_common.py --fix")
     return 1 if bad else 0

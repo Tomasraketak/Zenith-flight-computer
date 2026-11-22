@@ -15,9 +15,9 @@ LoRa telemetrie s příkazy ze země a dvě GUI.
 | Master MCU | [`firmware/Zenith_Master`](firmware/Zenith_Master) | Zenith U15 – Raspberry Pi Pico 2 |
 | Position MCU | [`firmware/Zenith_Position`](firmware/Zenith_Position) | Zenith U16 – Seeed XIAO RP2350 |
 | Pozemní stanice | [`firmware/Ground_Station`](firmware/Ground_Station) | deska pozemní stanice Daidalosu (Pico 2 W, Ra-02, OLED) |
-| Rampa | repo [RampaCode](https://github.com/Tomasraketak/RampaCode) | Rampa PCB1 (Pico 2) |
+| Rampa | repo [RampaCode](https://github.com/Tomasraketak/RampaCode) — jeden firmware pro Zenith i Daidalos | Rampa PCB1 (Pico 2) |
 | GUI pozemní stanice | [`gui/ground_station_gui.py`](gui/ground_station_gui.py) | PC + pozemní stanice na USB |
-| Diagnostické GUI | [`gui/zenith_diag.py`](gui/zenith_diag.py) | PC + raketa (Master) na USB |
+| Diagnostické GUI | [`gui/zenith_diag.py`](gui/zenith_diag.py) (design systém VoltinoLabs jako Daidalos, `gui/voltino_style.py`) | PC + raketa (Master) na USB |
 | Sdílený kód | [`firmware/common`](firmware/common) | protokol, navigace, letová logika, parametry |
 | Pinout | **[`docs/PINOUT.md`](docs/PINOUT.md)** | z netlistu `hardware/zenith_netlist_v2_4.txt` |
 | USB protokoly | [`docs/USB_PROTOCOL.md`](docs/USB_PROTOCOL.md) | |

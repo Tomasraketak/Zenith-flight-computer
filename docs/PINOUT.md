@@ -229,6 +229,8 @@ Stejný konektor a piny jako rampa Daidalosu (Rampa PCB1, J3), jen místo I²C j
 
 Protokol: `firmware/common/zenith_link.h` (`ZL_PKT_RMP_CMD` / `ZL_PKT_RMP_STATUS`),
 firmware rampy je v repozitáři [RampaCode](https://github.com/Tomasraketak/RampaCode).
+Stejný firmware rampy obslouží bez přenahrání i Daidalos (Ariadna V2 přes I²C slave `0x2B`
+na týchž pinech) — rampa sama pozná, která raketa je připojená.
 
 ## 7. Pozemní stanice
 

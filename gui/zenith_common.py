@@ -72,6 +72,7 @@ def haversine_m(lat1, lon1, lat2, lon2) -> float:
 PALETTE = {
     "bg": "#12161c", "panel": "#1b2129", "panel2": "#222a34", "text": "#e6edf3", "muted": "#8b98a5",
     "ok": "#2ea043", "warn": "#d29922", "bad": "#f85149", "info": "#388bfd", "accent": "#a371f7",
+    "grid": "#2b333d", "dim": "#3a434d",
 }
 
 STYLE = f"""
@@ -101,11 +102,14 @@ def label(text: str = "", size: int = 13, bold: bool = False, color: str | None 
     return lb
 
 
+LABEL_SCALE = 1.3   # px per "size" unit; the VoltinoLabs theme sets 1.0
+
+
 def set_label_style(lb: QtWidgets.QLabel, color: str | None = None):
     """Font size/weight live in the style sheet (the global sheet would override a QFont)."""
     size = lb.property("zsize") or 13
     bold = lb.property("zbold") or False
-    css = f"font-size: {int(size * 1.3)}px; background: transparent;"
+    css = f"font-size: {int(size * LABEL_SCALE)}px; background: transparent;"
     if bold:
         css += " font-weight: bold;"
     if color:
@@ -168,7 +172,7 @@ class StripChart(QtWidgets.QWidget):
             hi, lo = hi + 1, lo - 1
         pad = (hi - lo) * 0.08
         lo, hi = lo - pad, hi + pad
-        grid = QtGui.QPen(QtGui.QColor("#2b333d"))
+        grid = QtGui.QPen(QtGui.QColor(PALETTE["grid"]))
         for i in range(5):
             y = t + ph * i / 4
             p.setPen(grid)
@@ -230,7 +234,7 @@ class AttitudeView(QtWidgets.QWidget):
         # side view (east-up plane projection along the azimuth)
         cx, cy, L = w * 0.28, h * 0.55, min(w, h) * 0.35
         horiz = math.hypot(e, n)
-        p.setPen(QtGui.QPen(QtGui.QColor("#3a434d"), 1))
+        p.setPen(QtGui.QPen(QtGui.QColor(PALETTE["dim"]), 1))
         p.drawLine(int(cx - L), int(cy + L * 0.9), int(cx + L), int(cy + L * 0.9))
         p.setPen(QtGui.QPen(QtGui.QColor(PALETTE["info"]), 7, cap=Qt.PenCapStyle.RoundCap))
         p.drawLine(int(cx - horiz * L * 0.8), int(cy + u * L * 0.8), int(cx + horiz * L * 0.8), int(cy - u * L * 0.8))
@@ -240,7 +244,7 @@ class AttitudeView(QtWidgets.QWidget):
         p.drawText(8, 16, f"náklon {tilt:5.1f}°   azimut {az:5.0f}°")
         # top view: tilt bull's-eye
         bx, by, R = w * 0.75, h * 0.55, min(w * 0.22, h * 0.38)
-        p.setPen(QtGui.QPen(QtGui.QColor("#3a434d"), 1))
+        p.setPen(QtGui.QPen(QtGui.QColor(PALETTE["dim"]), 1))
         p.setBrush(Qt.BrushStyle.NoBrush)
         for k in (1, 2, 3):
             p.drawEllipse(QtCore.QPointF(bx, by), R * k / 3, R * k / 3)

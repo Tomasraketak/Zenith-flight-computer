@@ -31,8 +31,12 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from zenith_common import (STYLE, PALETTE, STATES_CZ, RAMPA_STATES, RAMPA_FAULTS, NAV_FLAGS, NAV_MODES,  # noqa: E402
-                           SENS_FLAGS, WHY, Chip, StripChart, AttitudeView, SerialReader, label, set_label_style,
+import zenith_common as zc  # noqa: E402
+import voltino_style as vs  # noqa: E402
+from voltino_style import Chip, Dot, Card  # noqa: E402
+vs.apply_to_common(zc)     # charts and attitude view in the VoltinoLabs colours
+from zenith_common import (PALETTE, STATES_CZ, RAMPA_STATES, RAMPA_FAULTS, NAV_FLAGS, NAV_MODES,  # noqa: E402
+                           SENS_FLAGS, WHY, StripChart, AttitudeView, SerialReader, label, set_label_style,
                            list_ports, state_name, err_name, bits, to_float, to_int)
 
 S_FIELDS = ["state", "err", "flags", "health", "t_ms", "vbat_mv", "curr_ma", "pyro", "ads0", "ads1", "ads2", "ads3",
@@ -194,49 +198,50 @@ class DiagWindow(QtWidgets.QMainWindow):
         root = QtWidgets.QWidget()
         self.setCentralWidget(root)
         v = QtWidgets.QVBoxLayout(root)
-        bar = QtWidgets.QHBoxLayout()
+        v.setContentsMargins(0, 0, 0, 0)
+        v.setSpacing(0)
+        hdr, bar = vs.header("ZENITH V2.4 · MASTER · DIAGNOSTIKA", "Zenith", " Diagnostika")
         self.port_cb = QtWidgets.QComboBox()
-        self.port_cb.setMinimumWidth(160)
+        self.port_cb.setMinimumWidth(190)
+        self.port_cb.setToolTip("Sériový port Masteru (USB)")
         self.port_cb.addItems(list_ports())
-        b_ref = QtWidgets.QPushButton("↻")
+        b_ref = vs.button("Obnovit", tip="Znovu vyhledat porty")
         b_ref.clicked.connect(lambda: (self.port_cb.clear(), self.port_cb.addItems(list_ports())))
-        b_con = QtWidgets.QPushButton("Připojit")
+        b_con = vs.button("Připojit", "primary")
         b_con.clicked.connect(lambda: self.connect_port(self.port_cb.currentText()))
-        b_demo = QtWidgets.QPushButton("Demo")
+        b_demo = vs.button("Demo", tip="Simulovaný Master bez hardwaru")
         b_demo.clicked.connect(self.start_demo)
-        self.conn_lb = label("nepřipojeno", color=PALETTE["muted"])
+        self.conn_lb = vs.label("nepřipojeno", "subtle")
         self.state_chip = Chip("—")
-        self.state_chip.setMinimumWidth(160)
-        self.go_chip = Chip("GO/NO-GO")
-        self.go_chip.setMinimumWidth(320)
-        for w in (label("Port:"), self.port_cb, b_ref, b_con, b_demo, self.conn_lb):
+        self.state_chip.setMinimumWidth(140)
+        self.go_chip = Chip("GO / NO-GO")
+        self.go_chip.setMinimumWidth(300)
+        for w in (self.state_chip, self.go_chip, self.port_cb, b_ref, b_con, b_demo, self.conn_lb):
             bar.addWidget(w)
-        bar.addStretch(1)
-        bar.addWidget(self.state_chip)
-        bar.addWidget(self.go_chip)
-        v.addLayout(bar)
+        v.addWidget(hdr)
         self.tabs = QtWidgets.QTabWidget()
+        self.tabs.setDocumentMode(True)
         v.addWidget(self.tabs, 1)
-        self.tabs.addTab(self._tab_overview(), "Přehled")
-        self.tabs.addTab(self._tab_nav(), "Navigace")
-        self.tabs.addTab(self._tab_sensors(), "Senzory a GPS")
-        self.tabs.addTab(self._tab_params(), "Parametry")
-        self.tabs.addTab(self._tab_tests(), "Testy (DIAG)")
-        self.tabs.addTab(self._tab_log(), "Letový log")
-        self.tabs.addTab(self._tab_console(), "Konzole")
+        self._page = lambda w: (w.layout().setContentsMargins(20, 16, 20, 16), w)[1]
+        self.tabs.addTab(self._page(self._tab_overview()), "Přehled")
+        self.tabs.addTab(self._page(self._tab_nav()), "Navigace")
+        self.tabs.addTab(self._page(self._tab_sensors()), "Senzory a GPS")
+        self.tabs.addTab(self._page(self._tab_params()), "Parametry")
+        self.tabs.addTab(self._page(self._tab_tests()), "Testy (DIAG)")
+        self.tabs.addTab(self._page(self._tab_log()), "Letový log")
+        self.tabs.addTab(self._page(self._tab_console()), "Konzole")
 
     def _btn(self, text, fn, obj=None):
-        b = QtWidgets.QPushButton(text)
-        if obj:
-            b.setObjectName(obj)
+        kind = {"abort": "danger", "go": "primary"}.get(obj or "", "")
+        b = vs.button(text, kind, big=(obj == "abort"))
         b.clicked.connect(fn)
         return b
 
     def _tab_overview(self):
         w = QtWidgets.QWidget()
         g = QtWidgets.QGridLayout(w)
-        gb = QtWidgets.QGroupBox("Go / No-Go (podmínky startu)")
-        gl = QtWidgets.QGridLayout(gb)
+        gb = Card("Go / No-Go", "Podmínky startu")
+        gl = QtWidgets.QGridLayout(gb.body)
         self.checks = {}
         items = [("pos", "Position MCU komunikuje"), ("nav", "Navigace platná"), ("hw", "INA226 / ADS1115 / PCA9685"),
                  ("bat", "Baterie ≥ vbat_min_v"), ("c1", "PYRO1 drogue – kontinuita"), ("c2", "PYRO2 main – kontinuita"),
@@ -244,9 +249,7 @@ class DiagWindow(QtWidgets.QMainWindow):
                  ("rampa", "Rampa online"), ("rampa_ready", "Rampa připravena (klíč, rozbuška)"), ("flash", "Log flash"),
                  ("lora", "LoRa rádio"), ("gps", "GPS fix")]
         for i, (k, n) in enumerate(items):
-            c = Chip("")
-            c.setMinimumWidth(0)
-            c.setFixedWidth(30)
+            c = Dot()
             self.checks[k] = c
             gl.addWidget(c, i, 0)
             gl.addWidget(label(n), i, 1)
@@ -255,8 +258,8 @@ class DiagWindow(QtWidgets.QMainWindow):
         gl.addWidget(self.err_lb, len(items), 0, 1, 2)
         g.addWidget(gb, 0, 0, 2, 1)
 
-        pw = QtWidgets.QGroupBox("Napájení a pyro")
-        pl = QtWidgets.QVBoxLayout(pw)
+        pw = Card("Napájení a pyro", "Baterie, lišta, kontinuita")
+        pl = QtWidgets.QVBoxLayout(pw.body)
         self.pow_lb = label("", 13)
         self.pow_lb.setWordWrap(True)
         pl.addWidget(self.pow_lb)
@@ -265,15 +268,15 @@ class DiagWindow(QtWidgets.QMainWindow):
         pl.addWidget(self.pyro_lb)
         g.addWidget(pw, 0, 1)
 
-        rw = QtWidgets.QGroupBox("Rampa (pogo UART)")
-        rl = QtWidgets.QVBoxLayout(rw)
+        rw = Card("Rampa · pogo UART", "Stav rampy")
+        rl = QtWidgets.QVBoxLayout(rw.body)
         self.rampa_lb = label("", 13)
         self.rampa_lb.setWordWrap(True)
         rl.addWidget(self.rampa_lb)
         g.addWidget(rw, 1, 1)
 
-        mw = QtWidgets.QGroupBox("Mise (stejné příkazy jako ze země)")
-        ml = QtWidgets.QGridLayout(mw)
+        mw = Card("Mise", "Stejné příkazy jako ze země")
+        ml = QtWidgets.QGridLayout(mw.body)
         ml.addWidget(self._btn("ABORT", lambda: self.send("ABORT"), "abort"), 0, 0, 1, 4)
         ml.addWidget(self._btn("PŘIPRAVIT (READY)", lambda: self.send("PREPARE"), "go"), 1, 0, 1, 2)
         self.cd_spin = QtWidgets.QSpinBox()
@@ -296,20 +299,20 @@ class DiagWindow(QtWidgets.QMainWindow):
     def _tab_nav(self):
         w = QtWidgets.QWidget()
         g = QtWidgets.QGridLayout(w)
-        nb = QtWidgets.QGroupBox("Navigační řešení (Position MCU, 100 Hz)")
-        nl = QtWidgets.QGridLayout(nb)
+        nb = Card("Position MCU · 100 Hz", "Navigační řešení")
+        nl = QtWidgets.QGridLayout(nb.body)
         self.nav_vals = {}
         for i, (k, n) in enumerate([("alt", "Výška KF [m]"), ("baro_alt", "Baro výška [m]"), ("vz", "vz [m/s]"),
                                     ("sig_alt", "σ výšky [m]"), ("mach", "Mach"), ("tilt", "Náklon [°]"),
                                     ("acc_axial", "Osové zrychlení [g]"), ("acc_mag", "|a| [g]"), ("px", "E [m]"),
                                     ("py", "N [m]"), ("max_alt", "Max. výška [m]"), ("mode", "Režim")]):
             nl.addWidget(label(n, 11, color=PALETTE["muted"]), (i // 4) * 2, i % 4)
-            val = label("—", 18, True)
+            val = label("—", 22, True)
             self.nav_vals[k] = val
             nl.addWidget(val, (i // 4) * 2 + 1, i % 4)
         g.addWidget(nb, 0, 0)
-        fb = QtWidgets.QGroupBox("Příznaky")
-        fl = QtWidgets.QGridLayout(fb)
+        fb = Card("Navigace", "Příznaky")
+        fl = QtWidgets.QGridLayout(fb.body)
         self.nav_chips = {}
         for i, n in enumerate(NAV_FLAGS):
             c = Chip(n)
@@ -317,13 +320,13 @@ class DiagWindow(QtWidgets.QMainWindow):
             fl.addWidget(c, i // 4, i % 4)
         g.addWidget(fb, 1, 0)
         self.att = AttitudeView()
-        ab = QtWidgets.QGroupBox("Orientace")
-        al = QtWidgets.QVBoxLayout(ab)
+        ab = Card("Orientace", "Náklon a azimut špičky")
+        al = QtWidgets.QVBoxLayout(ab.body)
         al.addWidget(self.att)
         self.euler_lb = label("", 12)
         al.addWidget(self.euler_lb)
         g.addWidget(ab, 0, 1, 2, 1)
-        self.ch_nav_alt = StripChart("Výška", [("KF", PALETTE["info"]), ("baro", PALETTE["warn"])], 30, "m")
+        self.ch_nav_alt = StripChart("Výška", [("KF", PALETTE["info"]), ("baro", PALETTE["ok"])], 30, "m")
         self.ch_nav_acc = StripChart("Zrychlení", [("osové", PALETTE["accent"]), ("|a|", PALETTE["muted"])], 30, "g")
         g.addWidget(self.ch_nav_alt, 2, 0)
         g.addWidget(self.ch_nav_acc, 2, 1)
@@ -333,8 +336,8 @@ class DiagWindow(QtWidgets.QMainWindow):
     def _tab_sensors(self):
         w = QtWidgets.QWidget()
         g = QtWidgets.QGridLayout(w)
-        sb = QtWidgets.QGroupBox("Position MCU")
-        sl = QtWidgets.QVBoxLayout(sb)
+        sb = Card("Position MCU", "Senzory a GPS")
+        sl = QtWidgets.QVBoxLayout(sb.body)
         self.sens_chips = {}
         row = QtWidgets.QHBoxLayout()
         for n in SENS_FLAGS:
@@ -346,8 +349,8 @@ class DiagWindow(QtWidgets.QMainWindow):
         self.pos_lb.setWordWrap(True)
         sl.addWidget(self.pos_lb)
         g.addWidget(sb, 0, 0)
-        rb = QtWidgets.QGroupBox("Surová data (RAW stream, osy desky)")
-        rl = QtWidgets.QVBoxLayout(rb)
+        rb = Card("Raw stream · osy desky", "Surová data")
+        rl = QtWidgets.QVBoxLayout(rb.body)
         hl = QtWidgets.QHBoxLayout()
         hl.addWidget(self._btn("RAW zap", lambda: self.send("RAW 1")))
         hl.addWidget(self._btn("RAW vyp", lambda: self.send("RAW 0")))
@@ -625,7 +628,8 @@ class DiagWindow(QtWidgets.QMainWindow):
         s = self.s
         age = time.time() - self.s_rx
         st = state_name(to_int(s["state"]))
-        self.state_chip.set("info" if age < 1 else False, f"{st}" if age < 1 else "SPOJENÍ ZTRACENO")
+        self.state_chip.set(("hot" if st == "ABORT" else "warn") if age < 1 else False,
+                            f"{st}" if age < 1 else "SPOJENÍ ZTRACENO")
         err = to_int(s["err"])
         self.go_chip.set(err == 0, "GO" if err == 0 else "NO-GO: " + err_name(err))
         flags, health, pyro = to_int(s["flags"]), to_int(s["health"]), to_int(s["pyro"])
@@ -719,7 +723,8 @@ def main():
     ap.add_argument("--demo", action="store_true")
     a = ap.parse_args()
     app = QtWidgets.QApplication(sys.argv)
-    app.setStyleSheet(STYLE)
+    app.setApplicationName("Zenith Diagnostika")
+    vs.setup_app(app, "VoltinoLabs.Zenith.Diagnostika")
     w = DiagWindow(a.port, a.demo)
     w.show()
     sys.exit(app.exec())

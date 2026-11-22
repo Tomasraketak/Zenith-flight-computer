@@ -1,0 +1,5 @@
+gui/logs/
+test/build/
+__pycache__/
+*.pyc
+build/

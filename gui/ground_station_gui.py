@@ -516,6 +516,12 @@ def main():
     a = ap.parse_args()
     app = QtWidgets.QApplication(sys.argv)
     app.setStyleSheet(STYLE)
+    try:
+        import voltino_style
+        voltino_style.set_windows_app_id("VoltinoLabs.Zenith.PozemniStanice")
+        app.setWindowIcon(voltino_style.app_icon())
+    except Exception:
+        pass
     w = GroundStation(a.port, a.demo, a.demo_speed)
     w.show()
     if a.screenshot:

@@ -230,8 +230,22 @@ def apply_to_common(zc) -> None:
     })
 
 
+def app_icon() -> QtGui.QIcon:
+    """tools/windows/zenith.ico (taskbar/window icon, same as the desktop shortcut)."""
+    import os
+    here = os.path.dirname(os.path.abspath(__file__))
+    for name in ("zenith.ico", "zenith.png"):
+        path = os.path.join(here, "..", "tools", "windows", name)
+        if os.path.isfile(path):
+            return QtGui.QIcon(path)
+    return QtGui.QIcon()
+
+
 def setup_app(app: QtWidgets.QApplication, app_id: str) -> None:
     set_windows_app_id(app_id)
+    icon = app_icon()
+    if not icon.isNull():
+        app.setWindowIcon(icon)
     QtCore.QLocale.setDefault(QtCore.QLocale(QtCore.QLocale.Language.Czech, QtCore.QLocale.Country.CzechRepublic))
     pick_font(app)
     app.setStyleSheet(QSS)

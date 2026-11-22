@@ -6,6 +6,31 @@ barometru v transsonické oblasti, vypuštění padáků (drogue v apogeu, main 
 výšce, záložní nálož při selhání), synchronizovaný start s rampou přes pogo konektor,
 LoRa telemetrie s příkazy ze země a dvě GUI.
 
+## Rychlý start (Windows)
+
+Do **cmd** vlož tento jeden řádek a stiskni Enter:
+
+```cmd
+powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/Tomasraketak/Zenith-flight-computer/main/tools/windows/zenith_setup.ps1 | iex"
+```
+
+Co se stane (jednou, lze kdykoli spustit znovu):
+
+1. doinstaluje **Git** a **Python 3.12** (winget), pokud chybí,
+2. stáhne celé repo jako git klon do složky **`Zenith` na ploše**,
+3. vytvoří na ploše zástupce **„Zenith diagnostika“** s ikonou Zenithu a hned diagnostiku spustí.
+
+Každé kliknutí na zástupce **aktualizuje složku `Zenith` z GitHubu** (vlastní úpravy schová do
+`git stash`, nic nemaže), aktualizuje Python balíčky a **otevře diagnostiku**. Bez internetu
+spustí to, co je na disku. GUI pozemní stanice stejným mechanismem:
+`powershell -NoProfile -ExecutionPolicy Bypass -File "%LOCALAPPDATA%\Zenith\zenith_launch.ps1" gs`.
+Skripty: [`tools/windows`](tools/windows) (stejný princip jako `daidalos_setup.ps1` u Daidalosu),
+log: `%LOCALAPPDATA%\Zenith\launch.log`.
+
+> Řádek výše funguje, když je repozitář veřejný. U soukromého repa ho naklonuj ručně
+> (`git clone https://github.com/Tomasraketak/Zenith-flight-computer.git "%USERPROFILE%\Desktop\Zenith"`)
+> a spusť `powershell -NoProfile -ExecutionPolicy Bypass -File "%USERPROFILE%\Desktop\Zenith\tools\windows\zenith_setup.ps1"`.
+
 > **Stav:** vše se kompiluje (arduino-pico 6.4.0) a logika je otestovaná na PC
 > simulací letu, ale **nic z toho ještě neběželo na skutečném hardwaru**. Před letem
 > projdi [předletové testy](#předletové-testy).

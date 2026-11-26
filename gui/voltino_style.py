@@ -66,6 +66,9 @@ QPushButton[kind="danger"] {{ color: {C['danger']}; border-color: {C['danger']};
 QPushButton[kind="danger"]:hover {{ background: {C['danger_tint']}; }}
 QPushButton[size="big"] {{ padding: 10px 14px; font-size: 14px; }}
 QPushButton[size="big"]:focus {{ padding: 9px 13px; }}
+QPushButton[kind="primary"]:checked {{ background: {C['accent_tint']}; }}
+QPushButton[kind="danger"]:disabled {{ color: rgba(242, 119, 122, 0.4); border-color: rgba(242, 119, 122, 0.2); }}
+QPushButton[kind="primary"]:disabled {{ color: rgba(245, 165, 28, 0.45); border-color: rgba(245, 165, 28, 0.25); }}
 
 QComboBox, QSpinBox, QDoubleSpinBox, QLineEdit {{ background: {C['surface']}; color: {C['text']};
     border: 1px solid {C['line_strong']}; border-radius: 6px; padding: 4px 6px; min-height: 20px;
@@ -84,6 +87,14 @@ QHeaderView::section {{ background: {C['bg_raised']}; color: {C['subtle']}; bord
     border-bottom: 1px solid {C['line']}; padding: 4px; font-size: 11px; font-weight: 600; }}
 QPlainTextEdit {{ background: {C['surface']}; color: {C['muted']}; border: 1px solid {C['line']}; border-radius: 8px;
     font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 12px; }}
+QListWidget {{ background: transparent; border: none; }}
+QListWidget::item {{ padding: 2px 0; }}
+QTreeWidget {{ background: {C['bg_raised']}; border: 1px solid {C['line']}; border-radius: 10px; }}
+QTreeWidget::item {{ padding: 3px 2px; }}
+QTreeWidget::item:selected {{ background: {C['accent_tint']}; color: {C['text']}; }}
+QProgressBar {{ background: {C['surface']}; border: 1px solid {C['line']}; border-radius: 6px; text-align: center;
+               color: {C['muted']}; min-height: 16px; }}
+QProgressBar::chunk {{ background: rgba(245, 165, 28, 0.55); border-radius: 5px; }}
 QScrollArea {{ border: none; }}
 QScrollBar:vertical {{ background: {C['bg']}; width: 10px; }}
 QScrollBar::handle:vertical {{ background: {C['surface']}; border-radius: 5px; min-height: 30px; }}
@@ -157,9 +168,10 @@ class Dot(Chip):
 
 
 class Card(QtWidgets.QFrame):
-    """Card with an amber kicker and a title; put content into `body`."""
+    """Card with an amber kicker and a title; put content into `body`, or with
+    body=False straight into `lay` (as the Daidalos console does)."""
 
-    def __init__(self, kicker: str, title: str = ""):
+    def __init__(self, kicker: str, title: str = "", body: bool = True):
         super().__init__()
         self.setObjectName("card")
         self.lay = QtWidgets.QVBoxLayout(self)
@@ -175,8 +187,9 @@ class Card(QtWidgets.QFrame):
         head.addStretch(1)
         self.head = head
         self.lay.addLayout(head)
-        self.body = QtWidgets.QWidget()
-        self.lay.addWidget(self.body, 1)
+        if body:
+            self.body = QtWidgets.QWidget()
+            self.lay.addWidget(self.body, 1)
 
 
 def header(kicker: str, word: str, accent: str) -> tuple[QtWidgets.QFrame, QtWidgets.QHBoxLayout]:

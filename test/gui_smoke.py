@@ -15,7 +15,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "gui"))
 
-from PyQt6 import QtCore, QtWidgets  # noqa: E402
+from PyQt6 import QtWidgets  # noqa: E402
 import zenith_common as zc  # noqa: E402
 import ground_station_gui as gsg  # noqa: E402
 import zenith_diag as zd  # noqa: E402
@@ -68,13 +68,43 @@ print("== diagnostic GUI against a simulated Master")
 import voltino_style as vs  # noqa: E402
 vs.setup_app(app, "VoltinoLabs.Zenith.Diagnostika")
 d = zd.DiagWindow(None, True)
+d.resize(1500, 980)
 d.show()
 spin(app, 1.5)
 check(d.s.get("state") is not None, "status line parsed")
-check(d.param_table.rowCount() >= 30, "parameter table filled (%d rows)" % d.param_table.rowCount())
-d.tabs.setCurrentIndex(1)
-spin(app, 0.5)
+check(len(d.param_items) >= 30, "parameter tree filled (%d parameters)" % len(d.param_items))
+check(d.board_kv["M"].v["Online"].text() == "ano", "Master card online")
+check(d.board_kv["P"].v["Online"].text() == "ano", "Position card online")
+check(d.problems.count() >= 1, "problem list: " + d.problems.item(0).text())
 check(d.nav.get("alt") is not None, "navigation parsed")
+check(d.rocket._valid, "3-D rocket has an attitude")
+# parameter edit -> send -> the board's $PRM echo clears the edit
+d.param_set("main_alt_m", 350)
+check("main_alt_m" in d.param_edits, "main_alt_m marked for sending")
+d.param_send()
+spin(app, 0.4)
+check(not d.param_edits and d.params[d.param_rows["main_alt_m"]]["val"] == 350, "PARAM SET acknowledged")
+spin(app, 0.4)
+check(d.s.get("main_alt") == "350", "Master reports main_alt 350")
+# DIAG -> rail on -> fire channel 2 (the demo Master needs RBF out, which it reports)
+d.diag_btn.setChecked(True)
+d.toggle_diag()
+spin(app, 0.5)
+check(d._state() == "DIAG", "DIAG mode")
+d.send("ARM 1")
+spin(app, 0.5)
+check(d.arm_chip.text() == "LIŠTA ZAPNUTA", "pyro rail on")
+d.fire(2)
+spin(app, 0.6)
+check(not d.pyro_rows[1]["fired"].isHidden(), "PYRO2 shows fired")
+d.disarm()
+d.send("DIAG 0")
+spin(app, 0.5)
+check(d._state() == "IDLE", "back to IDLE")
+# raw stream
+d.raw_btn.setChecked(True)
+spin(app, 0.5)
+check(d.raw.get("ax") is not None, "raw IMU stream")
 if OUT:
     for i in range(d.tabs.count()):
         d.tabs.setCurrentIndex(i)

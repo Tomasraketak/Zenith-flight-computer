@@ -42,7 +42,7 @@ log: `%LOCALAPPDATA%\Zenith\launch.log`.
 | Pozemní stanice | [`firmware/Ground_Station`](firmware/Ground_Station) | deska pozemní stanice Daidalosu (Pico 2 W, Ra-02, OLED) |
 | Rampa | repo [RampaCode](https://github.com/Tomasraketak/RampaCode) — jeden firmware pro Zenith i Daidalos | Rampa PCB1 (Pico 2) |
 | GUI pozemní stanice | [`gui/ground_station_gui.py`](gui/ground_station_gui.py) | PC + pozemní stanice na USB |
-| Diagnostické GUI | [`gui/zenith_diag.py`](gui/zenith_diag.py) (design systém VoltinoLabs jako Daidalos, `gui/voltino_style.py`) | PC + raketa (Master) na USB |
+| Diagnostické GUI | [`gui/zenith_diag.py`](gui/zenith_diag.py) (rozložení a funkce jako diagnostická konzole Daidalosu, `gui/zenith_widgets.py`, `gui/voltino_style.py`) | PC + raketa (Master) na USB |
 | Sdílený kód | [`firmware/common`](firmware/common) | protokol, navigace, letová logika, parametry |
 | Pinout | **[`docs/PINOUT.md`](docs/PINOUT.md)** | z netlistu `hardware/zenith_netlist_v2_4.txt` |
 | USB protokoly | [`docs/USB_PROTOCOL.md`](docs/USB_PROTOCOL.md) | |
@@ -165,7 +165,21 @@ nenásleduje `../`). Po úpravě: `python3 tools/sync_common.py --fix` (kontrolu
 `../RampaCode`, když je vedle).
 
 GUI: `pip install -r gui/requirements.txt`, pak `python gui/ground_station_gui.py`
-nebo `python gui/zenith_diag.py` (oba mají `--demo` bez hardwaru).
+nebo `python gui/zenith_diag.py` (oba mají `--demo` bez hardwaru; v diagnostice je
+v seznamu portů i „Simulace (bez hardwaru)“).
+
+Diagnostika má stejné rozložení jako konzole Daidalosu: v hlavičce port, stav desek
+a ABORT, pod ní stav / firmware / parametry / chyby a tlačítka mise (DIAG režim,
+pad reference, kalibrace gyra, Připravit, Odpočet, SAFE, nahrávání všech řádek do CSV).
+Záložky: **Přehled** (karty Master / Position / rampa, 3-D raketa a terč náklonu,
+let a padáky, seznam chyb a varování = Go/No-Go), **Poloha a senzory**, **Grafy**,
+**Surová data IMU** (i která osa je špička), **Aktuátory a pyro** (pyro lišta, odpálení
+podržením tlačítka v DIAG, FORCE_BAT, serva, kamera, bzučáky, konzole příkazů),
+**Parametry a časování** (skupiny, hledání, úpravy, odeslání, uložení do flash,
+export/import JSON) a **Letový záznam** (stažení do CSV, události, grafy).
+Profily, záznamy a logy se ukládají do `Dokumenty/Zenith` (nebo `$ZENITH_DATA`).
+
+![Diagnostická konzole](gui/screenshot.png)
 
 ## 6. Testy
 
